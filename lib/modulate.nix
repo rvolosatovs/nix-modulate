@@ -7,11 +7,11 @@ with nixlib.lib;
 with builtins;
 with nix-log.lib;
   {
-    base ? {},
-    darwin ? {},
-    home ? {},
-    nixos ? {},
-    system ? {},
+    baseModules ? {},
+    darwinModules ? {},
+    homeModules ? {},
+    nixosModules ? {},
+    systemModules ? {},
   }: let
     modulate = mapAttrs (name: spec:
       if isFunction spec
@@ -49,23 +49,21 @@ with nix-log.lib;
       )
       lhs;
 
-    baseModules = modulate base;
+    baseModules' = modulate baseModules;
 
-    systemModules = merge baseModules (modulate system);
+    systemModules' = merge baseModules' (modulate systemModules);
   in
     trace' "nix-modulate.lib.modulate" {
       inherit
-        base
-        baseModules
-        darwin
-        home
-        nixos
-        system
-        systemModules
+        baseModules'
+        darwinModules
+        homeModules
+        nixosModules
+        systemModules'
         ;
     }
     {
-      darwinModules = merge systemModules (modulate darwin);
-      homeModules = merge baseModules (modulate home);
-      nixosModules = merge systemModules (modulate nixos);
+      darwinModules = merge systemModules' (modulate darwinModules);
+      homeModules = merge baseModules' (modulate homeModules);
+      nixosModules = merge systemModules' (modulate nixosModules);
     }
