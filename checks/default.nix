@@ -7,18 +7,18 @@
 with nixlib.lib;
 with builtins; let
   res = self.lib.modulate {
-    base.test.options.default.base = mkOption {
+    baseModules.test.options.default.base = mkOption {
       type = types.str;
       default = "base";
     };
-    base.test.options.default.baseConst = mkOption {
+    baseModules.test.options.default.baseConst = mkOption {
       type = types.str;
     };
-    base.test.options.default.baseFromConfig = mkOption {
+    baseModules.test.options.default.baseFromConfig = mkOption {
       type = types.str;
     };
 
-    system.test = {config, ...}: {
+    systemModules.test = {config, ...}: {
       options.default.system = mkOption {
         type = types.str;
         default = "system";
@@ -32,19 +32,19 @@ with builtins; let
       };
     };
 
-    darwin.test = {config, ...}: {
+    darwinModules.test = {config, ...}: {
       options.default.baseConst.default = "darwin";
       options.default.baseFromConfig.default = config.default;
 
       options.default.systemConst.default = "darwin";
     };
 
-    home.test = {config, ...}: {
+    homeModules.test = {config, ...}: {
       options.default.baseConst.default = "home";
       options.default.baseFromConfig.default = config.default;
     };
 
-    nixos.test = {config, ...}: {
+    nixosModules.test = {config, ...}: {
       options.default.baseConst.default = "nixos";
       options.default.baseFromConfig.default = config.default;
 
