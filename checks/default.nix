@@ -2,6 +2,7 @@
   self,
   nixlib,
   nix-flake-tests,
+  nixpkgs,
   ...
 }: pkgs:
 with nixlib.lib;
@@ -28,38 +29,59 @@ with builtins; let
       };
       options.default.systemFromConfig = mkOption {
         type = types.str;
-        default = config.default;
+        default = config.fromConfig;
       };
     };
 
     darwinModules.test = {config, ...}: {
       options.default.baseConst.default = "darwin";
-      options.default.baseFromConfig.default = config.default;
+      options.default.baseFromConfig.default = config.fromConfig;
 
       options.default.systemConst.default = "darwin";
     };
 
     homeModules.test = {config, ...}: {
       options.default.baseConst.default = "home";
-      options.default.baseFromConfig.default = config.default;
+      options.default.baseFromConfig.default = config.fromConfig;
     };
 
     nixosModules.test = {config, ...}: {
       options.default.baseConst.default = "nixos";
-      options.default.baseFromConfig.default = config.default;
+      options.default.baseFromConfig.default = config.fromConfig;
 
       options.default.systemConst.default = "nixos";
     };
   };
 
   darwin = res.darwinModules.test {
-    config.default = "darwin";
+    config.fromConfig = "darwin";
   };
   home = res.homeModules.test {
-    config.default = "home";
+    config.fromConfig = "home";
   };
   nixos = res.nixosModules.test {
-    config.default = "nixos";
+    config.fromConfig = "nixos";
+  };
+
+  nixosSystem = nixpkgs.lib.nixosSystem {
+    system = pkgs.stdenv.buildPlatform.system;
+    modules = [
+      ({
+        config,
+        pkgs,
+        ...
+      }: {
+        imports = [
+          res.nixosModules.test
+        ];
+        options.nixosSystem.test = mkOption {
+          type = types.str;
+          default = config.default.system;
+        };
+        config.default.base = "nixosSystemBase";
+        config.default.system = "nixosSystemSystem";
+      })
+    ];
   };
 in {
   lib = nix-flake-tests.lib.check {
@@ -109,5 +131,14 @@ in {
 
     tests.testModulateDefaultSystemFromConfigNixos.expected = "nixos";
     tests.testModulateDefaultSystemFromConfigNixos.expr = nixos.options.default.systemFromConfig.default;
+
+    tests.testModulateDefaultNixosSystemOptionSystemConst.expected = "nixos";
+    tests.testModulateDefaultNixosSystemOptionSystemConst.expr = nixosSystem.config.default.systemConst;
+
+    tests.testModulateDefaultNixosSystemOptionBase.expected = "nixosSystemBase";
+    tests.testModulateDefaultNixosSystemOptionBase.expr = nixosSystem.config.default.base;
+
+    tests.testModulateDefaultNixosSystemOptionTest.expected = "nixosSystemSystem";
+    tests.testModulateDefaultNixosSystemOptionTest.expr = nixosSystem.config.nixosSystem.test;
   };
 }
