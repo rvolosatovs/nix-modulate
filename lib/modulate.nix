@@ -13,18 +13,21 @@ with nix-log.lib;
     nixosModules ? {},
     systemModules ? {},
   }: let
-    modulate = mapAttrs (name: spec:
-      if isFunction spec
-      then spec
-      else {...}: spec);
+    modulate = mapAttrs (
+      name: spec:
+        trace' "nix-modulate.lib.modulate.modulate.mapAttrs" {
+          inherit
+            name
+            spec
+            ;
+        } (
+          if isFunction spec
+          then spec
+          else {...}: spec
+        )
+    );
 
     merge = lhs: rhs:
-      trace' "nix-modulate.lib.modulate.merge" {
-        inherit
-          lhs
-          rhs
-          ;
-      }
       rhs
       // mapAttrs (
         name: mod: args: let
@@ -49,21 +52,42 @@ with nix-log.lib;
       )
       lhs;
 
-    baseModules' = modulate baseModules;
+    baseModules' =
+      trace "nix-modulate.lib.modulate.baseModules'"
+      modulate
+      baseModules;
 
-    systemModules' = merge baseModules' (modulate systemModules);
+    homeModules' =
+      trace "nix-modulate.lib.modulate.homeModules'"
+      merge
+      baseModules' (modulate homeModules);
+
+    systemModules' =
+      trace "nix-modulate.lib.modulate.systemModules'"
+      merge
+      baseModules' (modulate systemModules);
+
+    darwinModules' =
+      trace "nix-modulate.lib.modulate.darwinModules'"
+      merge
+      systemModules' (modulate darwinModules);
+
+    nixosModules' =
+      trace "nix-modulate.lib.modulate.nixosModules'"
+      merge
+      systemModules' (modulate nixosModules);
   in
     trace' "nix-modulate.lib.modulate" {
       inherit
         baseModules'
-        darwinModules
-        homeModules
-        nixosModules
+        darwinModules'
+        homeModules'
+        nixosModules'
         systemModules'
         ;
     }
     {
-      darwinModules = merge systemModules' (modulate darwinModules);
-      homeModules = merge baseModules' (modulate homeModules);
-      nixosModules = merge systemModules' (modulate nixosModules);
+      darwinModules = darwinModules';
+      homeModules = homeModules';
+      nixosModules = nixosModules';
     }
